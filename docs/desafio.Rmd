@@ -1,0 +1,61 @@
+---
+title: "Reposta para o desafio IEL-CNPq"
+author: "Raul de Sá Durlo"
+date: "16/07/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE,
+                      warning = FALSE)
+```
+
+## Desafio
+
+No desenvolvimento de modelos de predição, qual a diferença entre as técnicas de regressão linear e regressão logística? Quais são os indicadores para avaliar a performance de aderência do modelo?
+
+## Modelos de predição
+
+Em um modelo estatístico estamos interessador em obter uma função $f$ que explique as relações entre um conjunto de *preditores* $X = (X_{1}, X_{2}, ..., X_{p})$ e a variável de resposta $Y$:
+
+$$
+Y = f(X) + \epsilon
+$$
+Onde $f(X)$ representa informações sistemáticas da relação entre o conjunto de preditores $X$ e o a variável de resposta $Y$ e $\epsilon$ é um termo de erro aleatório que não dependende de $X$ e tem média igual a zero.
+
+```{r}
+library(tidyverse)
+library(ISLR)
+
+income <- read_csv("~/Defasio-IEL-CNPq/data/Income1.csv")
+
+fit <- lm(Income ~ Education, data = income)
+
+income$predicted <- predict(fit) # guarda os valores preditos Y_hat
+income$residuals <- residuals(fit) # guarda residuos da regressão
+
+# link para o gráfico:
+# https://drsimonj.svbtle.com/visualising-residuals
+income %>%
+  ggplot(aes(Education, Income)) +
+  geom_segment(aes(xend = Education, yend = predicted), color = "red") +
+  geom_smooth(method = "lm",
+              se = FALSE,
+              color = "lightgrey") +
+  geom_point() +
+  theme_bw()
+```
+
+Mas por que estimamos $f$? 
+
+### Predição versus Inferência
+
+
+
+
+## Regressão linear
+
+## Regressão Logística
+
+## Indicadores de performance e aderência do modelo
