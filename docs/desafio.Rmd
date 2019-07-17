@@ -2,60 +2,200 @@
 title: "Reposta para o desafio IEL-CNPq"
 author: "Raul de Sá Durlo"
 date: "16/07/2019"
-output: html_document
+output: 
+  html_document:
+    toc: true
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE,
+knitr::opts_chunk$set(echo = FALSE,
                       message = FALSE,
-                      warning = FALSE)
+                      warning = FALSE,
+                      fig.align = 'center',
+                      fig.height = 3,
+                      fig.width = 4)
 ```
 
-## Desafio
+# Pergunta
 
-No desenvolvimento de modelos de predição, qual a diferença entre as técnicas de regressão linear e regressão logística? Quais são os indicadores para avaliar a performance de aderência do modelo?
+> No desenvolvimento de modelos de predição, qual a diferença entre as técnicas de regressão linear e regressão logística? Quais são os indicadores para avaliar a performance de aderência do modelo?
 
-## Modelos de predição
+# Modelos estatísticos
 
-Em um modelo estatístico estamos interessador em obter uma função $f$ que explique as relações entre um conjunto de *preditores* $X = (X_{1}, X_{2}, ..., X_{p})$ e a variável de resposta $Y$:
+Em um modelo estatístico estamos interessados em obter uma função $f$ que relacione um conjunto de *preditores* $X$ a alguma *variável de resposta* $Y$. Os preditores $X = (X_{1}, X_{2}, ..., X_{p})$ também são chamados de *variáveis explicativas*, *variáveis independentes* ou *entrada* (*inputs*). Podemos descrever relação entre $X$ e $Y$ na forma geral:
 
 $$
 Y = f(X) + \epsilon
 $$
-Onde $f(X)$ representa informações sistemáticas da relação entre o conjunto de preditores $X$ e o a variável de resposta $Y$ e $\epsilon$ é um termo de erro aleatório que não dependende de $X$ e tem média igual a zero.
+
+Onde $f(X)$ representa uma relação sistemática entre o conjunto de preditores $X$ e  a variável de resposta $Y$ e $\epsilon$ é um termo de erro aleatório independente, com média igual a zero. Desse modo, um modelo pode descrito por:
+
+$$
+\hat{Y} = \hat{f}(X)
+$$
+
+O gráfico abaixo mostra uma relação bi-variada entre a renda ($Y$) de 30 indivíduos com os seus respectivos anos de estudos ($X$). Cada ponto no gráfico representa um indivíduo ($y_{1}$) e as linhas são diferentes modelos estatísticos estimados ($\hat{f}$): 
 
 ```{r}
 library(tidyverse)
 library(ISLR)
 
-income <- read_csv("~/Defasio-IEL-CNPq/data/Income1.csv")
+dir <- "C:/Users/rauld/OneDrive/Documentos/[documentos]Raul"
+arquivo <- paste0(dir, "/Desafio-IEL-CNPq/data/Income1.csv")
 
-fit <- lm(Income ~ Education, data = income)
+income <- read_csv(arquivo)
 
-income$predicted <- predict(fit) # guarda os valores preditos Y_hat
-income$residuals <- residuals(fit) # guarda residuos da regressão
-
-# link para o gráfico:
-# https://drsimonj.svbtle.com/visualising-residuals
 income %>%
   ggplot(aes(Education, Income)) +
-  geom_segment(aes(xend = Education, yend = predicted), color = "red") +
-  geom_smooth(method = "lm",
-              se = FALSE,
-              color = "lightgrey") +
-  geom_point() +
-  theme_bw()
+  geom_smooth(aes(color = "Linear"),
+              method = "lm",
+              size = .6,
+              se = FALSE) +
+  geom_smooth(aes(color = 'spline (df = 4)'),
+              method = lm,
+              formula = y ~ splines::bs(x, 4),
+              size = .6,
+              se = FALSE) +
+  geom_smooth(aes(color = 'Local regression'),
+              method = 'loess',
+              size = .6,
+              se = FALSE) +
+  geom_point(shape = 1, size = 2) +
+  labs(title = "Renda e anos de estudos") +
+  theme_bw() +
+  theme(plot.title = element_text(size=10, hjust = .5),
+        legend.title = element_blank())
+
 ```
 
-Mas por que estimamos $f$? 
+Os modelos representados pelas linhas acima são de diferentes tipos e se ajustam minimizando a distância entre seus valores estimados e os seus valores observados. A forma da curva definida pelo modelo depende de hipóteses assumidas a priori como se há linearidade ou não ou se é paramétrica ou não.
 
-### Predição versus Inferência
+Um modelo paramétrico normalmente apresenta a desvantagem de ser mais simplificador e inflexível, que podem ser atenuados sob a condição de um aumento significativo no número de parâmetros a serem estimados. Existem também modelos não paramétricos onde não é feita nenhuma suposição sobre a forma funcional de $f$ e, portanto, possui a capacidade de se ajustar melhor ao conjunto de dados.
+
+Por um lado, os modelos mais flexíveis tem maior capacidade de ajuste, porém são mais sensíveis aos erros (*overfitting*). Por outro lado, a simplificação tem a vantagem da interpretabilidade dos dados.
+
+Existem duas razões para se estimar $\hat{f}$, inferencia e predição. A inferência serve para análise da *maneira* de como os preditores $X_{1}, X_{2}, ..., X_{p}$ afetam a variável de resposta $Y$. Fazemos inferência quando queremos entender a causalidade entre $X$ e $Y$ ou como $Y$ muda em função de $X_{1}, X_{2}, ..., X_{p}$.
+
+O foco na **predição** serve para analisar a precisão de um modelo, ou seja, se os seus valores preditos $\hat{y_{0}}$ acertariam os valores reais $y_{0}$. Mas, como $\hat{f}$ não é, em geral, um estimador perfeito de $f$, sua diferença (erro) é explicada por fatores *redutíveis* e *irredutíveis*. Podemos decompor esses fatores por meio do quadrado das diferenças entre o valor estimado e a variável de resposta:
+
+$$
+E(Y-\hat{Y})^{2} = E[f(X) + \epsilon - \hat{f}(X)]^{2} = [f(X) - \hat{f}(X)]^{2} + Var(\epsilon)
+$$
+O termo de erro *redutível* corresponde ao termo $[f(X) - \hat{f}(X)]^{2}$ da equação acima e é aquele decorrente da escolha da forma funcional estimada. Assim, o modelo melhor prediz é aquele que minimiza essa diferença.
+
+Como $Y$ é função de $\epsilon$ e, por definição, $\epsilon$ não pode ser previsto por $X$. Algum erro sempre será introduzido ao modelo, daí o termo *irredutível*, denotado por $Var(\epsilon)$.
+
+# Regressão linear
+
+## Regressão linear simples
+
+$$
+Y \approx = \beta_{0} + \beta_{1}X
+$$
+
+```{r}
+dir <- "C:/Users/rauld/OneDrive/Documentos/[documentos]Raul"
+arquivo <- paste0(dir, "/Desafio-IEL-CNPq/data/Advertising.csv")
+
+read_csv(arquivo) -> ads
+
+fit.sales_tv <- lm(sales ~ TV, data = ads)
+
+ads %>%
+  select(sales, TV) %>%
+  mutate(predicted = predict(fit.sales_tv),
+         residuals = residuals(fit.sales_tv)) %>%
+  ggplot(aes(y=sales, x=TV)) +
+  geom_segment(aes(xend = TV, yend = predicted), color = "lightgrey") +
+  geom_smooth(method = "lm", se = FALSE, color = "lightblue") +
+  geom_point(color = "darkred") +
+  theme_classic()
+
+```
 
 
+```{r echo=T}
+library(tidyverse)
+library(ISLR)
+
+dir <- "C:/Users/rauld/OneDrive/Documentos/[documentos]Raul"
+arquivo <- paste0(dir, "/Desafio-IEL-CNPq/data/Advertising.csv")
+
+read_csv(arquivo) -> ads
+
+fit.sales_tv <- lm(sales ~ TV, data = ads)
+
+ads %>%
+  select(sales, TV) %>%
+  mutate(predicted = predict(fit.sales_tv),
+         residuals = residuals(fit.sales_tv)) %>%
+  ggplot(aes(y=sales, x=TV)) +
+  geom_segment(aes(xend = TV, yend = predicted), color = "lightgrey") +
+  geom_smooth(method = "lm", se = FALSE, color = "darkgrey") +
+  geom_point(color = "darkred") +
+  theme_classic()
+
+# parâmetros
+Y = ads$sales
+y_mean = mean(Y)
+X = ads$TV
+x_mean = mean(X)
+
+n = length(Y)
+
+coefficients(fit.sales_tv)
+
+# Coeficientes
+b1 <- sum((X - x_mean) * (Y - y_mean)) / sum((X - x_mean)^2)
+b0 <- y_mean - b1 * x_mean
+
+# Resíduos
+e <- Y - (b0 + b1 * X)
+RSS <- sum(e^2) # soma dos quadrados dos resíduos
+RSS # Residuals Sum of Squares
+
+# Acurácia dos coeficientes
+# Standard errors
+u_hat <- var(e) 
+
+# Rsiduals Standard Erros
+RSE = sqrt( RSS / (n-2) )
+
+# SE(b0)
+se_b0_hat <- sqrt( RSE^2 * ((1 / n) + (x_mean^2 / sum((X - x_mean)^2))))
+b0[[1]] + (2 * se_b0_hat) # 95% de confiança
+b0[[1]] - (2 * se_b0_hat)
+
+# SE(b1)
+se_b1_hat <- sqrt( RSE^2 / sum((X - x_mean)^2) )
+b1[[1]] + (2 * se_b1_hat) # 95% de confiança
+b1[[1]] - (2 * se_b1_hat)
+
+# teste de hipóteses
+ # H0: existe relação entre X e Y, portanto, b1 = 0 e o modelo será Y = b0 + e
+ # H1: não existe relação entre X e Y, portanto, b1 != 0 e o modelo 
+
+# t_stat b1
+(b1[[1]] - 0) / se_b1_hat
+
+# t_stat b0
+(b0[[1]] - 0) / se_b0_hat
+
+summary(fit.sales_tv)
+
+# Acurácia do Modelo
 
 
-## Regressão linear
+```
 
-## Regressão Logística
 
-## Indicadores de performance e aderência do modelo
+## Modelo
+## Hipóteses
+# Regressão logística
+## Modelo
+## Hipóteses
+# Performance e aderência
+## ROC
+## Matriz de confusão
