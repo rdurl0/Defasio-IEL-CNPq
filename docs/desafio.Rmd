@@ -42,8 +42,9 @@ O gráfico abaixo mostra uma relação bi-variada entre a renda ($Y$) de 30 indi
 library(tidyverse)
 library(ISLR)
 
-dir <- "C:/Users/rauld/OneDrive/Documentos/[documentos]Raul"
-arquivo <- paste0(dir, "/Desafio-IEL-CNPq/data/Income1.csv")
+#dir <- "C:/Users/rauld/OneDrive/Documentos/[documentos]Raul/Desafio-IEL-CNPq"
+dir <- "/home/marilia/Desafio-IEL-CNPq"
+arquivo <- paste0(dir, "/data/Income1.csv")
 
 income <- read_csv(arquivo)
 
@@ -96,9 +97,8 @@ Y \approx = \beta_{0} + \beta_{1}X
 $$
 
 ```{r}
-dir <- "C:/Users/rauld/OneDrive/Documentos/[documentos]Raul"
-arquivo <- paste0(dir, "/Desafio-IEL-CNPq/data/Advertising.csv")
 
+arquivo <- paste0(dir, "/data/Advertising.csv")
 read_csv(arquivo) -> ads
 
 fit.sales_tv <- lm(sales ~ TV, data = ads)
@@ -117,25 +117,8 @@ ads %>%
 
 
 ```{r echo=T}
-library(tidyverse)
-library(ISLR)
+ads
 
-dir <- "C:/Users/rauld/OneDrive/Documentos/[documentos]Raul"
-arquivo <- paste0(dir, "/Desafio-IEL-CNPq/data/Advertising.csv")
-
-read_csv(arquivo) -> ads
-
-fit.sales_tv <- lm(sales ~ TV, data = ads)
-
-ads %>%
-  select(sales, TV) %>%
-  mutate(predicted = predict(fit.sales_tv),
-         residuals = residuals(fit.sales_tv)) %>%
-  ggplot(aes(y=sales, x=TV)) +
-  geom_segment(aes(xend = TV, yend = predicted), color = "lightgrey") +
-  geom_smooth(method = "lm", se = FALSE, color = "darkgrey") +
-  geom_point(color = "darkred") +
-  theme_classic()
 
 # parâmetros
 Y = ads$sales
@@ -144,8 +127,6 @@ X = ads$TV
 x_mean = mean(X)
 
 n = length(Y)
-
-coefficients(fit.sales_tv)
 
 # Coeficientes
 b1 <- sum((X - x_mean) * (Y - y_mean)) / sum((X - x_mean)^2)
@@ -164,7 +145,7 @@ u_hat <- var(e)
 RSE = sqrt( RSS / (n-2) )
 
 # SE(b0)
-se_b0_hat <- sqrt( RSE^2 * ((1 / n) + (x_mean^2 / sum((X - x_mean)^2))))
+se_b0_hat <- sqrt( RSE^2 * ((1 / n) + (x_mean^2 / sum((X - x_mean)))))
 b0[[1]] + (2 * se_b0_hat) # 95% de confiança
 b0[[1]] - (2 * se_b0_hat)
 
@@ -174,8 +155,8 @@ b1[[1]] + (2 * se_b1_hat) # 95% de confiança
 b1[[1]] - (2 * se_b1_hat)
 
 # teste de hipóteses
- # H0: existe relação entre X e Y, portanto, b1 = 0 e o modelo será Y = b0 + e
- # H1: não existe relação entre X e Y, portanto, b1 != 0 e o modelo 
+# H0: existe relação entre X e Y, portanto, b1 = 0 e o modelo será Y = b0 + e
+# H1: não existe relação entre X e Y, portanto, b1 != 0 e o modelo 
 
 # t_stat b1
 (b1[[1]] - 0) / se_b1_hat
@@ -183,10 +164,63 @@ b1[[1]] - (2 * se_b1_hat)
 # t_stat b0
 (b0[[1]] - 0) / se_b0_hat
 
-summary(fit.sales_tv)
-
 # Acurácia do Modelo
+RSE
 
+#percentual de erros sobre a média de vendas
+RSE / y_mean
+
+# Estatística R²
+# R² = 1 - (RSS / TSS)
+
+TSS <- sum((Y - y_mean)^2)
+R2 <- 1 - (RSS / TSS)
+R2
+
+# o R² é identico à correlação entre duas variáveis
+sqrt(R2) == cor(Y, X)
+
+
+# Regressão multipla
+fit.sales_tv <- lm(sales ~ TV, data = ads)
+fit.sales_radio <- lm(sales ~ radio, data = ads)
+fit.sales_nwsp <- lm(sales ~ newspaper, data = ads)
+
+# podemos rodar diversas regressões separadas
+summary(fit.sales_tv)
+summary(fit.sales_radio)
+summary(fit.sales_nwsp)
+
+# Modelo Múltiplo
+  # sales = b0 + b1 * TV + b2 * radio + b3 * newspaper
+
+mod2 <- lm(sales ~ TV + radio, data = ads)
+s <- scatterplot3d::scatterplot3d(ads$sales, ads$TV, ads$newspaper,
+                                  pch=16, highlight.3d = TRUE)
+  s$plane3d(mod2, draw_polygon = TRUE, draw_lines = FALSE)
+
+  advertising_fit1 <- lm(sales~TV+radio, data = ads)
+  sp <- scatterplot3d::scatterplot3d(ads$TV, 
+                                     ads$radio, 
+                                     ads$sales, 
+                                     angle = 45)
+  sp$plane3d(advertising_fit1, lty.box = "solid")#,
+  # polygon_args = list(col = rgb(.1, .2, .7, .5)) # Fill color
+  orig <- sp$xyz.convert(ads$TV, 
+                         ads$radio, 
+                         ads$sales)
+  plane <- sp$xyz.convert(ads$TV, 
+                          ads$radio,  fitted(advertising_fit1))
+  i.negpos <- 1 + (resid(advertising_fit1) > 0)
+  segments(orig$x, orig$y, plane$x, plane$y,
+           col = c("blue", "red")[i.negpos], 
+           lty = 1) # (2:1)[i.negpos]
+  sp <- FactoClass::addgrids3d(ads$TV, 
+                               ads$radio, 
+                               ads$sales,
+                               angle = 45,
+                               grid = c("xy", "xz", "yz"))  
+  
 
 ```
 
