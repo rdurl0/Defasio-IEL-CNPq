@@ -203,9 +203,10 @@ s <- scatterplot3d::scatterplot3d(ads$sales, ads$TV, ads$newspaper,
   sp <- scatterplot3d::scatterplot3d(ads$TV, 
                                      ads$radio, 
                                      ads$sales, 
-                                     angle = 45)
-  sp$plane3d(advertising_fit1, lty.box = "solid")#,
-  # polygon_args = list(col = rgb(.1, .2, .7, .5)) # Fill color
+                                     angle = 45,
+                                     pch=16,
+                                     highlight.3d = F)
+  sp$plane3d(advertising_fit1, lty.box = "solid", draw_polygon = TRUE, draw_lines = FALSE)#,
   orig <- sp$xyz.convert(ads$TV, 
                          ads$radio, 
                          ads$sales)
@@ -213,15 +214,15 @@ s <- scatterplot3d::scatterplot3d(ads$sales, ads$TV, ads$newspaper,
                           ads$radio,  fitted(advertising_fit1))
   i.negpos <- 1 + (resid(advertising_fit1) > 0)
   segments(orig$x, orig$y, plane$x, plane$y,
-           col = c("blue", "red")[i.negpos], 
+           col = c("red", "blue")[i.negpos], 
            lty = 1) # (2:1)[i.negpos]
-  sp <- FactoClass::addgrids3d(ads$TV, 
-                               ads$radio, 
-                               ads$sales,
-                               angle = 45,
-                               grid = c("xy", "xz", "yz"))  
+  #sp <- FactoClass::addgrids3d(ads$TV, 
+  #                             ads$radio, 
+  #                             ads$sales,
+  #                             angle = 45,
+  #                             grid = c("xy", "xz", "yz"))  
   
-
+#https://stackoverflow.com/questions/47344850/scatterplot3d-regression-plane-with-residuals
 ```
 
 
