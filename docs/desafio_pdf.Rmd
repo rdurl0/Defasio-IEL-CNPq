@@ -3,10 +3,8 @@ title: "Reposta para o desafio IEL-CNPq"
 author: "Raul de Sá Durlo"
 date: "19/07/2019"
 output: 
-  html_document:
-    toc: true
+  pdf_document
 ---
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE,
                       message = FALSE,
@@ -17,7 +15,6 @@ knitr::opts_chunk$set(echo = FALSE,
                       collapse = TRUE)
 ```
 
-# Pergunta
 
 > No desenvolvimento de modelos de predição, qual a diferença entre as técnicas de regressão linear e regressão logística? Quais são os indicadores para avaliar a performance de aderência do modelo?
 
@@ -83,6 +80,7 @@ O foco na **predição** serve para analisar a precisão de um modelo, ou seja, 
 $$
 E(Y-\hat{Y})^{2} = E[f(X) + \epsilon - \hat{f}(X)]^{2} = [f(X) - \hat{f}(X)]^{2} + Var(\epsilon)
 $$
+
 O termo de erro *redutível* corresponde ao termo $[f(X) - \hat{f}(X)]^{2}$ da equação acima e é aquele decorrente da escolha da forma funcional estimada. Assim, o modelo melhor prediz é aquele que minimiza essa diferença.
 
 Como $Y$ é função de $\epsilon$ e, por definição, $\epsilon$ não pode ser previsto por $X$. Algum erro sempre será introduzido ao modelo, daí o termo *irredutível*, denotado por $Var(\epsilon)$.
@@ -162,7 +160,7 @@ kable(xtable(fit.sales_tv), caption = "Modelo de regressão linear simples: coef
 ```
 
 Outra característica dos modelos apresentados é que eles apresentam somente um parâmetro, sendo considerados, portanto, modelos de regressão linear simples. O modelo linear simples pode ser extendido para o **modelo de regressão linear múltipla**. O gráfico abaixo combina os efeitos de `TV` e `radio` sobre as vendas:
- 
+
 
 ```{r fig.width=7, fig.height=4.5}
 # Modelo Múltiplo
@@ -214,9 +212,9 @@ segments(orig$x,
 A tabela abaixo extende o modelo para mais de três variáveis. Na tabela os coeficientes são analisados testando-se a hipótese nula $H_0: \beta_i = 0$ contra a hipótese alternativa $H_a: \beta_i \neq 0$
 
 ```{r echo = FALSE, results='asis'}
-library(stargazer)
+library(huxtable)
 fit.sales_multi2 <- lm(sales ~ TV + radio + newspaper, data = ads)
-stargazer(fit.sales_multi2, type="html")
+huxreg(fit.sales_multi2)
 ```
 
 No caso apresentado, a hipótese nula só não é rejeitada para a variável dependente `newspaper`. isso implica que esta variável não é adequada para explicar `sales`. A estatística F testa todos os parâmetros do modelo em conjunto contra a hipótese de modelo nulo ($H_a: pelo \; menos \; um \; \beta_i \neq 0$). O $R^2$ varia entre 0 e 1 e mede o quanto da variação de $Y$ pode ser explicada pelo modelo.
@@ -244,10 +242,10 @@ ads %>%
 
 A forma aditiva ($\beta_{0} + \beta_{1}X_{1} + ... + \beta_{p}X_{p}$) é normalmente assumida por questões de simplicidade mas o modelo de regressão linear múltipla pode ser extendido com efeitos de interação ou para preditores qualitativos, como no exemplo abaixo:
 
-$$
-\texttt{balance}_{i} \approx \beta_{0} + \beta_{1}*\texttt{income}  \left\{\begin{matrix} \beta_{2} \; se \; \texttt{student} \\ 0 \; se \; \texttt{not_student}\; \end{matrix}\right.
-$$
-
+$$ \texttt{balance}_{i} \approx \beta_{0} + \beta_{1} \times \texttt{income} \left\{\begin{matrix}
+\beta_2 \text{ se } \texttt{student}\\ 
+0 \text{ se } \texttt{nonstudent}
+\end{matrix}\right. $$
 Para casos em que a variável qualitativa assume valores qualitativos são formulados os modelos de classificação como por exemplo o *Modelo de Regressão Logística*. A seguir sera apresentado o modelo.
 
 # Regressão logística
@@ -379,6 +377,8 @@ accuracy
 sum(diag(accuracy))/sum(accuracy)
 ```
 
+\newpage
+
 #### Matriz de confusão
 
 * **Acurácia:** proporção de predições corretas totais (positivo e negativo)
@@ -393,11 +393,13 @@ pred = predict(mod_fit, newdata=teste)
 confusionMatrix(data=pred, teste$default)
 ```
 
+\newpage
+
 ### Curva *Receiver Operating Characteristic (ROC)*
 
 A curva ROC plota $P(\hat Y = 1 |Y=1)$ (sensibilidade) versus $1-P(\hat Y =  0 |Y=0)$ (1-especificidade) para todos os possíveis pontos de corte entre 0 e 1. Ela mostra o *trade-off* existente entre a qual taxa pode-se predizer corretamente algo contra a taxa de se predizer incorretamente.
 
-```{r}
+```{r echo = T}
 
 mod_fit1 <- glm(default ~ balance + income + student,  data=treino, family="binomial")
 
@@ -422,4 +424,6 @@ Nete desafio concluiu-se que modelos de predição devem ser performados atentan
 * G. James, D. Witten,  T. Hastie and R. Tibshirani. **"An Introduction to Statistical Learning, with applications in R"**  (Springer, 2013) 
 
 * G. James, D. Witten,  T. Hastie and R. Tibshirani. [ISLR: Data for an Introduction to Statistical Learning with Applications in R](https://cran.r-project.org/web/packages/ISLR/index.html). R Package.
+
+
 
