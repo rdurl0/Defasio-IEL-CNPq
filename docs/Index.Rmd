@@ -25,7 +25,7 @@ Desafio respondido por Raul de Sá Durlo
 
 ## Currículo profissional e lattes
 
-* Para acessar meu currículo profissional [clique aqui](https://rdurl0.github.io/Desafio-IEL-CNPq/CV_Raul.pdf)
+* Para acessar meu currículo profissional [clique aqui](https://rdurl0.github.io/Desafio-IEL-CNPq/docs/CV_Raul.pdf)
 
 * Para acessar meu currículo lattes [clique aqui](http://lattes.cnpq.br/8549263887619790)
 
