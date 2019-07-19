@@ -15,6 +15,8 @@ Desafio respondido por Raul de Sá Durlo
   - Para acessar meu currículo lattes [clique
     aqui](http://lattes.cnpq.br/8549263887619790)
 
+  - Para acessar o código fonte do relatório de resposta ao desafio [clique aqui](https://github.com/rdurl0/Desafio-IEL-CNPq/blob/master/docs/desafio.Rmd) 
+  
 ## Contato
 
 **email**: <durlo.raul@gmail.com>
