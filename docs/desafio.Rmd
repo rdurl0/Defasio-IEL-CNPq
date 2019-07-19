@@ -15,7 +15,8 @@ knitr::opts_chunk$set(echo = FALSE,
                       warning = FALSE,
                       fig.align = 'center',
                       fig.height = 3,
-                      fig.width = 4)
+                      fig.width = 4,
+                      collapse = TRUE)
 ```
 
 # Pergunta
@@ -42,8 +43,8 @@ O gráfico abaixo mostra uma relação bi-variada entre a renda ($Y$) de 30 indi
 library(tidyverse)
 library(ISLR)
 
-#dir <- "C:/Users/rauld/OneDrive/Documentos/[documentos]Raul/Desafio-IEL-CNPq"
-dir <- "/home/marilia/Desafio-IEL-CNPq"
+dir <- "C:/Users/rauld/OneDrive/Documentos/[documentos]Raul/Desafio-IEL-CNPq"
+#dir <- "/home/marilia/Desafio-IEL-CNPq"
 arquivo <- paste0(dir, "/data/Income1.csv")
 
 income <- read_csv(arquivo)
@@ -88,149 +89,339 @@ O termo de erro *redutível* corresponde ao termo $[f(X) - \hat{f}(X)]^{2}$ da e
 
 Como $Y$ é função de $\epsilon$ e, por definição, $\epsilon$ não pode ser previsto por $X$. Algum erro sempre será introduzido ao modelo, daí o termo *irredutível*, denotado por $Var(\epsilon)$.
 
-# Regressão linear
+# O Modelo de regressão linear
 
-## Regressão linear simples
+Um modelo linear assume a função $f$, linear, em que $\beta_0$ e $\beta_{1}$ são os coeficientes a ser estimados.
 
 $$
-Y \approx = \beta_{0} + \beta_{1}X
+Y \approx \beta_{0} + \beta X
 $$
 
-```{r}
+Os coeficientes do modelo linear podem ser estimados por meio do *método de mínimos quadrados ordinários*
+
+$$
+min \sum \epsilon^2 = min \sum (Y - \hat{Y})^2 = min \sum [Y - (\beta_{0} + \beta X)] 
+$$
+
+$$
+\hat \beta = (X^{´} X )^{-1} X^{´} y
+$$
+
+O gráfico abaixo apresenta a relação entre as vendas (`sales` - em un. de milhar) de um produto em 200 localidades diferentes. O orçamento do departamento de *marketing* é apresentado em unidades de milhar e dividido em três mídias `TV`, `radio` (rádio) e `newspaper` (jornal):
+
+```{r fig.width=10}
 
 arquivo <- paste0(dir, "/data/Advertising.csv")
 read_csv(arquivo) -> ads
 
 fit.sales_tv <- lm(sales ~ TV, data = ads)
-
-ads %>%
-  select(sales, TV) %>%
-  mutate(predicted = predict(fit.sales_tv),
-         residuals = residuals(fit.sales_tv)) %>%
-  ggplot(aes(y=sales, x=TV)) +
-  geom_segment(aes(xend = TV, yend = predicted), color = "lightgrey") +
-  geom_smooth(method = "lm", se = FALSE, color = "lightblue") +
-  geom_point(color = "darkred") +
-  theme_classic()
-
-```
-
-
-```{r echo=T}
-ads
-
-
-# parâmetros
-Y = ads$sales
-y_mean = mean(Y)
-X = ads$TV
-x_mean = mean(X)
-
-n = length(Y)
-
-# Coeficientes
-b1 <- sum((X - x_mean) * (Y - y_mean)) / sum((X - x_mean)^2)
-b0 <- y_mean - b1 * x_mean
-
-# Resíduos
-e <- Y - (b0 + b1 * X)
-RSS <- sum(e^2) # soma dos quadrados dos resíduos
-RSS # Residuals Sum of Squares
-
-# Acurácia dos coeficientes
-# Standard errors
-u_hat <- var(e) 
-
-# Rsiduals Standard Erros
-RSE = sqrt( RSS / (n-2) )
-
-# SE(b0)
-se_b0_hat <- sqrt( RSE^2 * ((1 / n) + (x_mean^2 / sum((X - x_mean)))))
-b0[[1]] + (2 * se_b0_hat) # 95% de confiança
-b0[[1]] - (2 * se_b0_hat)
-
-# SE(b1)
-se_b1_hat <- sqrt( RSE^2 / sum((X - x_mean)^2) )
-b1[[1]] + (2 * se_b1_hat) # 95% de confiança
-b1[[1]] - (2 * se_b1_hat)
-
-# teste de hipóteses
-# H0: existe relação entre X e Y, portanto, b1 = 0 e o modelo será Y = b0 + e
-# H1: não existe relação entre X e Y, portanto, b1 != 0 e o modelo 
-
-# t_stat b1
-(b1[[1]] - 0) / se_b1_hat
-
-# t_stat b0
-(b0[[1]] - 0) / se_b0_hat
-
-# Acurácia do Modelo
-RSE
-
-#percentual de erros sobre a média de vendas
-RSE / y_mean
-
-# Estatística R²
-# R² = 1 - (RSS / TSS)
-
-TSS <- sum((Y - y_mean)^2)
-R2 <- 1 - (RSS / TSS)
-R2
-
-# o R² é identico à correlação entre duas variáveis
-sqrt(R2) == cor(Y, X)
-
-
-# Regressão multipla
-fit.sales_tv <- lm(sales ~ TV, data = ads)
 fit.sales_radio <- lm(sales ~ radio, data = ads)
 fit.sales_nwsp <- lm(sales ~ newspaper, data = ads)
 
-# podemos rodar diversas regressões separadas
-summary(fit.sales_tv)
-summary(fit.sales_radio)
-summary(fit.sales_nwsp)
+plot.ads <- function(mod, var_expl){
+  ads %>%
+  mutate(predicted = predict(mod),
+         residuals = residuals(mod)) %>%
+  ggplot(aes_string(y="sales", x=var_expl)) +
+  geom_segment(aes_string(xend = var_expl, yend = "predicted"), color = "lightgrey") +
+  geom_smooth(method = "lm", se = FALSE, color = "skyblue") +
+  geom_point(color = "darkred") +
+  theme_classic()
+}
 
+p <- list(fit.sales_tv, fit.sales_radio, fit.sales_nwsp) %>%
+  map2(., list("TV", "radio", "newspaper"), ~plot.ads(mod = .x, var_expl = .y))
+
+library(ggpubr)
+grid <- ggarrange(p[[1]], p[[2]], p[[3]], ncol = 3, nrow = 1)
+annotate_figure(grid, top = text_grob("A relação ente as vendas e o orçamento gasto com cada meio de comunicação"))
+
+```
+
+Com base nos gráficos acima podemos observar que os gastos com as mídias parecem corresponder à uma relação linear com as vendas. É de se esperar que, quanto maior os investimentos em propaganda, maiores serão as vendas.
+
+Essa relação linear está representada pela linha reta crescente em azul, que possui inclinação $\hat \beta_{1}$ e intercepto $\hat \beta_{0}$. Essa reta passa por todos os valores preditos pelo modelo e os segmentos em cinza ligam os valores observados aos valores preditos, essa distância representa o termo de erro ($\epsilon$).
+
+Além da suposição de linearidade do modelo, assume-se também as hipóteses de que $Cov(\epsilon_i, \epsilon_j) = 0$, $\epsilon \sim N(0, \sigma^2)$ e  $Y_i \sim N(\beta_0 + \beta X, \sigma^2)$.
+
+$$
+\hat{\texttt{sales}_i} = 7.03 + 0.046 \times \texttt{TV}
+$$
+
+$$
+\hat{\texttt{sales}_i} = 9.31 + 0.203 \times \texttt{radio}
+$$
+
+$$
+\hat{\texttt{sales}_i} = 12.35 + 0.055 \times \texttt{newspaper}
+$$
+
+```{r echo =F}
+library(xtable)
+library(kableExtra)
+kable(xtable(fit.sales_tv), caption = "Modelo de regressão linear simples: coeficientes de mínimos quadrados ordinários") %>%
+  kable_styling(bootstrap_options = "striped", full_width = F)
+```
+
+Outra característica dos modelos apresentados é que eles apresentam somente um parâmetro, sendo considerados, portanto, modelos de regressão linear simples. O modelo linear simples pode ser extendido para o **modelo de regressão linear múltipla**. O gráfico abaixo combina os efeitos de `TV` e `radio` sobre as vendas:
+ 
+
+```{r fig.width=7, fig.height=4.5}
 # Modelo Múltiplo
   # sales = b0 + b1 * TV + b2 * radio + b3 * newspaper
 
-mod2 <- lm(sales ~ TV + radio, data = ads)
-s <- scatterplot3d::scatterplot3d(ads$sales, ads$TV, ads$newspaper,
-                                  pch=16, highlight.3d = TRUE)
-  s$plane3d(mod2, draw_polygon = TRUE, draw_lines = FALSE)
+fit.sales_multi <- lm(sales ~ TV + radio, data = ads)
 
-  advertising_fit1 <- lm(sales~TV+radio, data = ads)
-  sp <- scatterplot3d::scatterplot3d(ads$TV, 
-                                     ads$radio, 
-                                     ads$sales, 
-                                     angle = 45,
-                                     pch=16,
-                                     highlight.3d = F)
-  sp$plane3d(advertising_fit1, lty.box = "solid", draw_polygon = TRUE, draw_lines = FALSE)#,
-  orig <- sp$xyz.convert(ads$TV, 
-                         ads$radio, 
-                         ads$sales)
-  plane <- sp$xyz.convert(ads$TV, 
-                          ads$radio,  fitted(advertising_fit1))
-  i.negpos <- 1 + (resid(advertising_fit1) > 0)
-  segments(orig$x, orig$y, plane$x, plane$y,
-           col = c("red", "blue")[i.negpos], 
-           lty = 1) # (2:1)[i.negpos]
-  #sp <- FactoClass::addgrids3d(ads$TV, 
-  #                             ads$radio, 
-  #                             ads$sales,
-  #                             angle = 45,
-  #                             grid = c("xy", "xz", "yz"))  
+titulo <- "Modelo de regressão linear tri-dimensional"
+subt <- "As vendas em função de investimentos em publicidade no rádio e na TV"
+
+i.negpos <- 1 + (resid(fit.sales_multi) > 0)
+
+library(scatterplot3d)
+sp <- scatterplot3d(ads$TV,
+                    xlab = "TV",
+                    ads$radio,
+                    ylab = "Rádio",
+                    ads$sales,
+                    zlab = "Vendas",
+                    main = titulo,
+                    sub = subt,
+                    pch = 16, 
+                    color = c("darkred", "blue")[i.negpos],
+                    highlight.3d = F)
+sp$plane3d(fit.sales_multi,
+           draw_polygon = TRUE,
+           draw_lines = F,
+           polygon_args = list(col = rgb(0,0,0,0.4)))
+
+orig <- sp$xyz.convert(ads$TV, 
+                       ads$radio, 
+                       ads$sales)
+
+plane <- sp$xyz.convert(ads$TV, 
+                        ads$radio,
+                        fitted(fit.sales_multi))
+
+segments(orig$x,
+         orig$y,
+         plane$x,
+         plane$y,
+         col = c("darkred", "blue")[i.negpos], 
+         lty = 1)
+
   
-#https://stackoverflow.com/questions/47344850/scatterplot3d-regression-plane-with-residuals
+#Fonte : https://stackoverflow.com/questions/47344850/scatterplot3d-regression-plane-with-residuals
+```
+
+A tabela abaixo extende o modelo para mais de três variáveis. Na tabela os coeficientes são analisados testando-se a hipótese nula $H_0: \beta_i = 0$ contra a hipótese alternativa $H_a: \beta_i \neq 0$
+
+```{r echo = FALSE, results='asis'}
+library(stargazer)
+fit.sales_multi2 <- lm(sales ~ TV + radio + newspaper, data = ads)
+stargazer(fit.sales_multi2, type="html")
+```
+
+No caso apresentado, a hipótese nula só não é rejeitada para a variável dependente `newspaper`. isso implica que esta variável não é adequada para explicar `sales`. A estatística F testa todos os parâmetros do modelo em conjunto contra a hipótese de modelo nulo ($H_a: pelo \; menos \; um \; \beta_i \neq 0$). O $R^2$ varia entre 0 e 1 e mede o quanto da variação de $Y$ pode ser explicada pelo modelo.
+
+A estratégia para seleção de melhores modelos preditivos parte da estatística $F$, pois se o modelo é válido então pelo menos 1 dos parâmetros servem para explicar a variável de resposta. Os critérios de seleção são variados e podem partir de um modelo nulo (*backward*) ou de um modelo com todas as variáveis em potencial (*forward*).
+
+Por fim, cabe ressaltar sobre a diferença entre **intervalos de confiança** e **intervalos de predição**: no primeiro caso, os intervalos de confiança testam hipóteses relativas ao modelo em geral, por isso são focados no termo de erro redutível explicados no início deste texto. Já os intervalos de predição são utilizados para predição de um valor pontual 
+
+```{r fig.width=6}
+
+ads %>%
+  cbind(predict(fit.sales_tv, interval = "prediction")) %>%
+  ggplot(aes(y=sales, x=TV)) +
+  geom_line(aes(y=lwr, color = "Intervalo de confiança"), linetype = "dashed")+
+  geom_line(aes(y=upr, color = "Intervalo de confiança"), linetype = "dashed")+
+  geom_smooth(aes(color = "Intervalo de predição"), method = "lm", se = T) +
+  scale_color_manual(values = c("red", "lightgrey")) +
+  geom_point(color = "darkred") +
+  theme_classic() +
+  theme(legend.title = element_blank()) +
+  labs(title = "Intervalos de confiança vs. Intervalos de predição")
+
 ```
 
 
-## Modelo
-## Hipóteses
+A forma aditiva ($\beta_{0} + \beta_{1}X_{1} + ... + \beta_{p}X_{p}$) é normalmente assumida por questões de simplicidade mas o modelo de regressão linear múltipla pode ser extendido com efeitos de interação ou para preditores qualitativos, como no exemplo abaixo:
+
+$$
+\texttt{balance}_{i} \approx \beta_{0} + \beta_{1}*\texttt{income}  \left\{\begin{matrix} \beta_{2} \; se \; \texttt{student} \\ 0 \; se \; \texttt{not_student}\; \end{matrix}\right.
+$$
+
+Para casos em que a variável qualitativa assume valores qualitativos são formulados os modelos de classificação como por exemplo o *Modelo de Regressão Logística*. A seguir sera apresentado o modelo.
+
 # Regressão logística
-## Modelo
-## Hipóteses
-# Performance e aderência
-## ROC
-## Matriz de confusão
+
+Apesar de a regressão logística se comportar como uma regressão linear ela não apresenta resposta quantitava. O modelo de regressão logística é adequado para variáveis *qualitativas* ou *categóricas*. A predição de variáveis categóricas é denominada **classificação**.
+
+O dado abaixo é denominado [`Default`](https://www.rdocumentation.org/packages/ISLR/versions/1.2/topics/Default), que contém dados de clientes de um banco onde a variável `balance` é o saldo do cartão de crédito no final de um mês, `income` é a renda média deste cliente e `default` é uma informação binária que indica se o cliente está ou não em débito com o banco.
+
+
+
+```{r}
+Default %>%
+  arrange(default, desc(student)) %>% 
+  slice(-0:-7000) %>% 
+  ggplot(aes(y = income, x = balance)) +
+  geom_point(aes(shape = default, color = default), alpha = .5, size = 2) +
+  scale_shape_manual(values = c(1, 3)) +
+  scale_color_manual(values = c("deepskyblue3", "coral4")) +
+  theme_bw()
+```
+
+Aparentemente, clientes devedores (em `default`) são aqueles que costumam apresentar maiores contas no final do mês. Como o fato de o cliente estar ou não em `default`é uma variável binária. Assim, podemos ilustrar nosso problema da seguinte forma:
+
+$$
+Pf( \texttt{default} = Yes | balance ) = p(balance)
+$$
+
+Na figura abaixo fica claro que o modelo linear não é adequado para este tipo de problema. O modelo prediz probabilidades negativas para `balance` próximos de zero. O modelo linear também é propenso a predizer probabilidades acima de 1 para saldos muito altos. O gráfico abaixo mostra a dispersão entre renda (`income`) e o saldo do cartão de crédito `balance`.
+
+```{r}
+
+default <- Default %>%
+  mutate(default = case_when(default == "No" ~ 0, TRUE ~ 1))
+
+default %>%
+  ggplot(aes(y = default, x = balance)) +
+  geom_point(shape=124, size = 2) +
+  geom_smooth(method = "lm",
+              aes(color = "Modelo linear"),
+              se = F) +
+  geom_smooth(method = "glm",
+              method.args = list(family = "binomial"),
+              aes(color = "GLM Binomial"),
+              se = F )+
+  theme_bw() +
+  theme(legend.title = element_blank()) +
+  labs(title = "Renda e saldo no cartão de crédito")
+
+```
+
+
+
+Para contornoar o problema apresentado com o modelo linear, é necessário uma função que retorne resultados entre 0 e 1 para todos os valores de $X$, como a **função logística**:
+
+$$
+p(X) = \frac{e^{\beta_{0} + \beta_{1}X}}{1 + e^{\beta_{0} + \beta_{1}X}}
+$$
+
+Os parâmetros para estimar a função logística é o de *máxima verossimilhança*. No gráfico acima a linha vermelha evidencia que para valores de saldos muito baixos, a probabilidade de default é muito próxima de zero, mas nunca menor. Manipulando a equação acima, obtemos:
+
+$$
+\frac{p(X)}{1 - p(X)} = e^{\beta_0 + \beta_1 X}
+$$
+
+O lado esquerdo é denominado *odds* e assume qualquer valor entre $0$ e $\infty$. Usando o logaritmo em ambos os lados, obtemos:
+
+$$
+log(\frac{p(X)}{1-p(X)}) = \beta_0 + \beta_1 X
+$$
+
+Onde $log(\frac{p(X)}{1-p(X)})$ é o *logito* (ou *log-odds*), que por sua vez é linear em $X$ (vide o lado direito da equação anterior. Diferentemente do modelo de regressão linear, os parâmetros são estimados por *máxima verossimilhança* com a *função de verossimilhança*, os coeficientes $\hat{\beta_0}$ e $\hat{\beta_1}$ devem maximizar a equação:
+
+$$
+\ell(\beta_0, \beta_1) = \prod_{i:y_i=1}p(x_i) \prod_{i^{´}:y_{i^{´}}=0}(1-p(x_{i^{´}}))
+$$
+
+No modelo abaixo, um incremento em `balance` está recionado a um aumento na probabilidade de `default`, com $\hat{\beta_1}$:
+
+```{r}
+
+fit.logit_bal <- glm(formula = default ~ balance, family = "binomial", data = default)
+kable(xtable(fit.logit_bal)) %>% kable_styling(bootstrap_options = "striped", full_width = F)
+```
+
+Com os coeficientes estimados, é possível predizer a probabilidade de `default` para cada valor de `balance`. Abaixo é demonstrado que para um indivíduo com um saldo de \$2000 a probabilidade de ficar inadimplente é de 58.6\%.
+
+$$
+\hat{p}(X) = \frac{e^{\hat\beta_{0} + \hat\beta_{1}X}}{1 + e^{\hat\beta_{0} + \hat\beta_{1}X}} =  \frac{e^{-10.65+0,006\times2000}}{1+e^{-10.65+0,006\times2000}}=0.586 \; ou \; 58.6\%
+$$
+
+
+## Performance e aderência
+
+Nesta seção será feita a validação de um modelo de regressão logística multipla. Podemos testar a aderência  e a performance dos modelos com a demonstração abaixo realizada no sotware `R`. No primeiro passo, os dados são particionados em uma parte para `treino` e outra parte para `teste`.
+
+```{r echo=T}
+library(caret)
+library(ISLR)
+library(tidyverse)
+library(lmtest)
+
+
+Default <- as_tibble(Default)
+
+indice_treino <- createDataPartition(y = Default$default, p = 0.7, list = FALSE)
+
+treino <- Default[indice_treino, ]
+teste <- Default[-indice_treino, ]
+```
+
+Com os dados de `treino`, utilizaremos a regressão logística para classificação de um modelo com 2 preditores onde a chance de estar em débito com o banco é uma função da renda e do saldo devedor:
+
+```{r echo=T}
+mod_fit <- train(default ~ balance + income + student,  data=treino, method="glm", family="binomial")
+```
+
+Inspecionando os preditores, pode-se perceber que as chances de se estar negativado aumentam em torno de 1 unidade conforme aumentam a renda ou o saldo devedor. 
+
+```{r echo=T}
+exp(coef(mod_fit$finalModel))
+```
+
+### Classificação
+
+```{r echo=T}
+pred <- predict(mod_fit, newdata = teste)
+accuracy <- table(pred, teste$default)
+accuracy
+sum(diag(accuracy))/sum(accuracy)
+```
+
+#### Matriz de confusão
+
+* **Acurácia:** proporção de predições corretas totais (positivo e negativo)
+* **Sensibilidade**: Proporção de verdaeiros positivos
+* **Especificidade**: Proporção de verdadeiros negativos
+* **Verdadeiro Preditivo Positivo**: Proporção de verdadeiros positivos em relação às predições positivas
+* **Verdadeiro Preditivo Negativo**: Proporção de verdadeiros negativos em relação às predições negativas
+
+
+```{r echo=T}
+pred = predict(mod_fit, newdata=teste)
+confusionMatrix(data=pred, teste$default)
+```
+
+### Curva *Receiver Operating Characteristic Curve*
+
+A curva ROC plota $P(\hat Y = 1 |Y=1)$ (sensibilidade) versus $1-P(\hat Y =  0 |Y=0)$ (1-especificidade) para todos os possíveis pontos de corte entre 0 e 1. Ela mostra o *trade-off* existente entre a qual taxa pode-se predizer corretamente algo contra a taxa de se predizer incorretamente.
+
+```{r}
+
+mod_fit1 <- glm(default ~ balance + income + student,  data=treino, family="binomial")
+
+library(ROCR)
+prob <- predict(mod_fit1, newdata=teste, type="response")
+pred <- prediction(prob, teste$default)
+perf <- performance(pred, measure = "tpr", x.measure = "fpr")
+plot(perf)
+
+auc <- performance(pred, measure = "auc")
+auc <- auc@y.values[[1]]
+auc
+```
+
+
+# Conclusão
+
+Nete desafio concluiu-se que modelos de predição devem ser performados atentando-se aos componentes redutíveis e irredutíveis de um modelo de predição. Os modelos de regressão linar são diferentes dos modelos logísticos principalmente em função das suas variáveis de respostas. Os indicadores de aderência do modelo de predição foram apresentados para o MRL (intervalos de confiança e intervalos de predição) e para o modelo logístico com auxílo do software `R`.
+
+# Referência Bibliográfica
+
+* G. James, D. Witten,  T. Hastie and R. Tibshirani. **"An Introduction to Statistical Learning, with applications in R"**  (Springer, 2013) 
+
+* G. James, D. Witten,  T. Hastie and R. Tibshirani. [ISLR: Data for an Introduction to Statistical Learning with Applications in R](https://cran.r-project.org/web/packages/ISLR/index.html). R Package.
+
