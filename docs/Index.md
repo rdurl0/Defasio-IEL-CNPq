@@ -3,8 +3,6 @@ Desafio-IEL-CNPq
 Raul de Sá Durlo
 19/07/2019
 
-# Desafio-IEL-CNPq
-
 ## Desafio respondido por Raul de Sá Durlo
 
 ## Pergunta
