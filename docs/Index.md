@@ -3,18 +3,7 @@ Desafio-IEL-CNPq
 Raul de Sá Durlo
 19/07/2019
 
-## Desafio respondido por Raul de Sá Durlo
-
-link direto para esta página [clique
-aqui](https://rdurl0.github.io/Desafio-IEL-CNPq/)
-
-## Pergunta
-
-> No desenvolvimento de modelos de predição, qual a diferença entre as
-> técnicas de regressão linear e regressão logística? Quais são os
-> indicadores para avaliar a performance de aderência do modelo?
-
-## Resposta
+Desafio respondido por Raul de Sá Durlo
 
 ### **Para acessar o relatório com resposta completa ao desafio** [clique aqui](https://rdurl0.github.io/Desafio-IEL-CNPq/docs/desafio.html)
 
@@ -28,5 +17,11 @@ aqui](https://rdurl0.github.io/Desafio-IEL-CNPq/)
 
 ## Contato
 
-**email**: <durlo.raul@gmail.com> **celular**: (11) 9 7094-1437
+**email**: <durlo.raul@gmail.com>
+
+**celular**: (11) 9 7094-1437
+
 **fixo**: (13) 32734298
+
+link direto para esta página [clique
+aqui](https://rdurl0.github.io/Desafio-IEL-CNPq/)
